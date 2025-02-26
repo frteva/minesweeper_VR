@@ -3,10 +3,11 @@ export function initGrid(rows = 10, cols = 10, mineCount = 15) {
       Array.from({ length: cols }, () => ({
         isMine: false,
         revealed: false,
+        showHint: false,
         adjacentMines: 0,
       }))
     );
-  
+
     // 🌋 Placer les mines
     let minesPlaced = 0;
     while (minesPlaced < mineCount) {
@@ -17,7 +18,7 @@ export function initGrid(rows = 10, cols = 10, mineCount = 15) {
         minesPlaced++;
       }
     }
-  
+
     // 🔍 Calcul des nombres voisins
     for (let x = 0; x < rows; x++) {
       for (let y = 0; y < cols; y++) {
@@ -36,7 +37,7 @@ export function initGrid(rows = 10, cols = 10, mineCount = 15) {
         }
       }
     }
-  
+
     return grid;
 }
 
@@ -54,31 +55,57 @@ export function propagation(x,y) {
             }
         }
     }
-    
+
 }
 
-function flowFieldTo(row, col) {
-    // The frontier will store the cells who needs to be visited
-    const frontier = [];
-    const visited = [];
-    // At the beginning, only the destination is in the frontier
-    frontier.push({row, col});
-    // While the frontier is not empty, we must continue to visit the cells inside it
-    while (frontier.length > 0) {
-      // Get the first cell in the frontier
-      const cell = frontier.shift();
-      // For each of the "walkables" neighbors (all "alives" neighbors)
-      this.getWalkableNeighbors(cell).forEach(next => {
-        //  the current neighbor need to be visited. So we put it in the frontier.
-        frontier.push(next);
-        // mark mine as revealed
-      });
+function initFlowMap(rows, cols) {
+  // create an empty "flow map" matrix of the same size as the actual grid.
+  const flowMap = [];
+  for (let row = 0; row < rows; row++) {
+    flowMap[row] = [];
+    for (let col = 0; col < cols; col++) {
+      // By default, there is no path found for the cells
+      flowMap[row][col] = false;
     }
-    // The destination is the final step. There is no destination from it.
-    this.flowMap[row][col] = false;
   }
+  return flowMap;
+}
 
-function getWalkableNeighbors({row, col}) {
+export function flowFieldTo(row, col, rows, cols, grid) {
+  const flowMap = initFlowMap(rows, cols);
+  // The frontier will store the cells who needs to be visited
+  const frontier = [];
+  // At the beginning, only the destination is in the frontier
+  frontier.push({row, col});
+  flowMap[row][col] = {row, col};
+  if (grid[row][col].adjacentMines != 0) {
+    flowMap[row][col].showHint = true;
+    return flowMap;
+  }
+  // While the frontier is not empty, we must continue to visit the cells inside it
+  while (frontier.length > 0) {
+    // Get the first cell in the frontier
+    const cell = frontier.shift();
+    // For each of the "walkables" neighbors (all "alives" neighbors)
+    getWalkableNeighbors(cell, rows, cols, grid).forEach(next => {
+      // Ignore allready visited cells
+      if (flowMap[next.row][next.col] === false) {
+        // Store the actual cell as the destination of the current neighbor
+        flowMap[next.row][next.col] = cell;
+        flowMap[cell.row][cell.col].showHint = true;
+        if (grid[next.row][next.col].adjacentMines == 0) {
+          frontier.push(next);
+        }
+      }
+    });
+  }
+  // The destination is the final step. There is no destination from it.
+  //flowMap[row][col] = false;
+  return flowMap;
+}
+
+
+function getWalkableNeighbors({row, col}, rows, cols, grid) {
     // Von Neumann neighborhood (without itself)
     let neighbors = [
       {row: row + 1, col},
@@ -94,16 +121,15 @@ function getWalkableNeighbors({row, col}) {
       {row: row - 1, col: col - 1}
     ];
     neighbors = neighbors.concat(diagNeighbors);
-    neighbors = neighbors.filter(cell => this.isWalkable(cell));
+    neighbors = neighbors.filter(cell => isWalkable(cell, rows, cols, grid));
     return neighbors;
   }
 
-  function isWalkable(cell, grid) {
-    return isValidPos(cell) && grid[cell.row][cell.col].adjacentMines === 0 && !grid[cell.row][cell.col].revealad;
+  function isWalkable(cell, rows, cols, grid) {
+    return isValidPos(cell, rows, cols) && !grid[cell.row][cell.col].revealed && !grid[cell.row][cell.col].showHint;
   }
 
-  function isValidPos({row, col}) {
+  function isValidPos({row, col}, rows, cols) {
     return row >= 0 && row < rows
         && col >= 0 && col < cols;
   }
-  

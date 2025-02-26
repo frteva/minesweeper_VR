@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import BaseMine from './BaseMine.vue';
-import { initGrid } from '@/utils/minesweeper.js';
+import { initGrid, flowFieldTo } from '@/utils/minesweeper.js';
 
 const rows = 20;
 const cols = 30;
@@ -17,7 +17,13 @@ onMounted(() => {
 });
 
 function revealed_propagation(x, y) {
-    //propagation(x,y)
+  const flowMap = flowFieldTo(x, y, rows, cols, grid.value);
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      if (flowMap[i][j] === false) continue;
+      grid.value[i][j].showHint = true;
+    }
+  }
 }
 
 </script>
@@ -31,6 +37,7 @@ function revealed_propagation(x, y) {
             @revealed-propagation="revealed_propagation(x, y)"
             :position="`${x * (width + gap)} 0 ${y * (depth + gap)}`"
             :isMine="cell.isMine"
+            :showHint="cell.showHint"
             :revealed="cell.revealed"
             :adjacentMines="cell.adjacentMines"
             :depth="depth"

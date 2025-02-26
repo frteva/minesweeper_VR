@@ -2,11 +2,12 @@
 
 import '../aframe/clickable.js';
 import '../aframe/event-set.js';
+import '../aframe/look-at.js';
 
 const props = defineProps({
   position: String, // Ex: "0 0 0"
   isMine: Boolean,
-  revealed: { type: Boolean, default: false },
+  showHint: Boolean,
   adjacentMines: Number,
   width: { type: Number, default: 1 },
   depth: { type: Number, default: 1 },
@@ -15,7 +16,6 @@ const props = defineProps({
 const emits = defineEmits(['revealed-propagation']);
 
 function handleClick() {
-  if (props.adjacentMines != 0) return;
   emits("revealed-propagation")
 }
 
@@ -25,17 +25,18 @@ function handleClick() {
   <a-box
     clickable
     @click="handleClick"
-    :event-set__click="`_event: click; attribute: material.color; value: green;`"
     :position="position"
-    :material="`color: ${isMine ? 'red' : 'blue'}`"
+    :material="`color: ${isMine ? 'red' : (showHint === false || (showHint && adjacentMines==0)) ? 'blue' : 'green'}`"
     :depth="depth"
     :width="width"
     height="0.2"
   >
     <!-- Afficher le nombre si révélé et non mine -->
-    <a-text v-if="!isMine" 
-            :value="adjacentMines" 
-            position="0 0.5 0">
+    <a-text v-if="showHint && !isMine"
+            :value="adjacentMines"
+            position="0 0.5 0"
+            look-at
+          >
     </a-text>
   </a-box>
 </template>
