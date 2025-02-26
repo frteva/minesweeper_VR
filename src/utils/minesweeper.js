@@ -57,7 +57,7 @@ export function propagation(x,y) {
     
 }
 
-flowFieldTo(row, col) {
+function flowFieldTo(row, col) {
     // The frontier will store the cells who needs to be visited
     const frontier = [];
     const visited = [];
@@ -78,7 +78,7 @@ flowFieldTo(row, col) {
     this.flowMap[row][col] = false;
   }
 
-  getWalkableNeighbors({row, col}) {
+function getWalkableNeighbors({row, col}) {
     // Von Neumann neighborhood (without itself)
     let neighbors = [
       {row: row + 1, col},

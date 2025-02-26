@@ -18,7 +18,6 @@ onMounted(() => {
 
 function revealed_propagation(x, y) {
     //propagation(x,y)
-    console.log(x,y);
 }
 
 </script>
